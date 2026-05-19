@@ -1181,7 +1181,9 @@
       const timer = setTimeout(() => { cleanup(); resolve(null); }, 8000);
 
       window[cbName] = (data) => { clearTimeout(timer); cleanup(); resolve(data); };
-      script.onerror  = ()     => { clearTimeout(timer); cleanup(); resolve(null); };
+      // No limpiar en onerror: en Safari/WebKit el redirect dispara onerror
+      // aunque el script sí cargue. El timer gestiona el timeout real.
+      script.onerror = () => {};
 
       script.src = EVAL_SHEETS_URL +
         '?action=verificar' +
