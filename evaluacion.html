@@ -1160,26 +1160,36 @@
   // VERIFICACIÓN ANTI-REINTENTO
   // ══════════════════════════════════════════════
 
-  /** Consulta al Apps Script vía fetch si el código ya fue enviado (solo http/https) */
-  async function verificarCodigo(codigo) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    try {
-      const url = EVAL_SHEETS_URL + '?action=verificar&codigo=' + encodeURIComponent(codigo);
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[Nivel2] respuesta del servidor:', data);
-        return data;
-      }
-      console.warn('[Nivel2] respuesta no-ok, status:', res.status);
-      return null;
-    } catch (err) {
-      clearTimeout(timer);
-      console.warn('[Nivel2] fetch falló:', err.message);
-      return null;
-    }
+  /** Consulta al Apps Script vía JSONP si el código ya fue enviado.
+   *  JSONP funciona desde https:// sin restricciones CORS.
+   *  Desde file:// el browser lo bloquea → se omite (fail open). */
+  function verificarCodigo(codigo) {
+    return new Promise((resolve) => {
+      if (window.location.protocol === 'file:') { resolve(null); return; }
+
+      const cbName = '_evalChk_' + Date.now();
+      const script = document.createElement('script');
+      let done = false;
+
+      const cleanup = () => {
+        if (done) return;
+        done = true;
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+
+      const timer = setTimeout(() => { cleanup(); resolve(null); }, 8000);
+
+      window[cbName] = (data) => { clearTimeout(timer); cleanup(); resolve(data); };
+      script.onerror  = ()     => { clearTimeout(timer); cleanup(); resolve(null); };
+
+      script.src = EVAL_SHEETS_URL +
+        '?action=verificar' +
+        '&codigo='   + encodeURIComponent(codigo) +
+        '&callback=' + cbName;
+
+      document.head.appendChild(script);
+    });
   }
 
   /** Muestra la pantalla de bloqueo */
