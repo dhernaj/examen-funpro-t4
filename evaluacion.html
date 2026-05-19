@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluación Tema 4 – Fundamentos de Programación CIIN1205P</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== Variables ===== */
+    :root {
+      --bg: #090c14;
+      --surface: #111827;
+      --surface2: #1f2937;
+      --border: #374151;
+      --primary: #6366f1;
+      --primary-dim: rgba(99,102,241,0.15);
+      --accent: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+
+    /* ===== Screen management ===== */
+    .screen { display: none; }
+    .screen.active { display: flex; }
+    #screen-examen.active { display: block; }
+    #screen-terminado.active { display: flex; }
+
+    /* ─────────────────────────────────────────────
+       OVERLAY: Enviando
+    ───────────────────────────────────────────── */
+    #overlay-sending {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(9,12,20,0.92);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+    }
+    #overlay-sending.show { display: flex; }
+    .spinner {
+      width: 56px; height: 56px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-text { font-size: 1.1rem; font-weight: 600; color: var(--text-muted); }
+
+    /* ─────────────────────────────────────────────
+       OVERLAY: Advertencia de salida
+    ───────────────────────────────────────────── */
+    #overlay-advertencia {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(9,12,20,0.95);
+      z-index: 8888;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+      animation: fadeIn 0.25s ease;
+    }
+    #overlay-advertencia.show { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+    .adv-card {
+      background: var(--surface);
+      border: 2px solid var(--warning);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(245,158,11,0.25);
+    }
+    .adv-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+    .adv-card h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--warning);
+      margin-bottom: 10px;
+    }
+    .adv-card .adv-msg {
+      font-size: 0.98rem; color: var(--text);
+      margin-bottom: 20px; line-height: 1.55;
+    }
+    .adv-counter {
+      display: inline-block;
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 999px;
+      padding: 6px 20px;
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--warning);
+      margin-bottom: 28px;
+    }
+    .adv-counter.danger-count {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.4);
+      color: var(--danger);
+    }
+    .btn-regresar {
+      width: 100%;
+      background: var(--warning);
+      color: #000;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-regresar:hover { opacity: 0.88; }
+    .adv-warning-note {
+      margin-top: 16px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 1: Registro
+    ───────────────────────────────────────────── */
+    #screen-registro {
+      min-height: 100vh;
+      align-items: center; justify-content: center;
+      padding: 24px; flex-direction: column;
+    }
+    .registro-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 36px;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .logo-area { text-align: center; margin-bottom: 28px; }
+    .logo-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 60px; height: 60px;
+      background: var(--primary-dim);
+      border: 1px solid var(--primary);
+      border-radius: 16px; font-size: 28px; margin-bottom: 14px;
+    }
+    .logo-area h1 { font-size: 1.1rem; font-weight: 700; line-height: 1.3; }
+    .logo-area p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+    .exam-info-strip { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+    .info-badge {
+      flex: 1; min-width: 90px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;
+    }
+    .info-badge .badge-val { display: block; font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+    .info-badge .badge-lbl { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: 0.82rem; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 7px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .form-group input {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; padding: 12px 14px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+    .form-group input::placeholder { color: #4b5563; }
+    .btn-primary {
+      width: 100%; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700;
+      padding: 14px; cursor: pointer; margin-top: 6px;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    .btn-primary:hover { background: #5254cc; box-shadow: 0 4px 20px rgba(99,102,241,0.35); }
+    .btn-primary:active { transform: scale(0.98); }
+    .disclaimer { margin-top: 18px; font-size: 0.75rem; color: var(--text-muted); text-align: center; line-height: 1.5; }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 2: Examen – Cabecera sticky
+    ───────────────────────────────────────────── */
+    #screen-examen { min-height: 100vh; padding-bottom: 88px; }
+    .exam-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(9,12,20,0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .exam-header-inner {
+      max-width: 700px; margin: 0 auto;
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .exam-title-block { flex: 1; min-width: 140px; }
+    .exam-title-block h2 { font-size: 0.88rem; font-weight: 700; line-height: 1.3; }
+    .exam-title-block p { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+    .header-stats { display: flex; align-items: center; gap: 10px; }
+    .progress-pill {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 999px; padding: 5px 12px;
+      font-size: 0.75rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;
+    }
+    .progress-pill span { color: var(--primary); }
+    .timer-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem; font-weight: 500; color: var(--success);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 5px 12px;
+      min-width: 76px; text-align: center;
+      transition: color 0.3s, border-color 0.3s, background 0.3s;
+    }
+    .timer-display.warning { color: var(--warning); border-color: var(--warning); background: rgba(245,158,11,0.08); }
+    .timer-display.danger  { color: var(--danger);  border-color: var(--danger);  background: rgba(239,68,68,0.08); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .progress-bar-wrap { height: 3px; background: var(--surface2); }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.35s ease; width: 0%;
+    }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 2: Pregunta única
+    ───────────────────────────────────────────── */
+    .question-wrapper {
+      max-width: 700px; margin: 0 auto;
+      padding: 28px 20px 12px;
+    }
+    .question-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      transition: border-color 0.25s;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .question-card.answered { border-color: var(--primary); }
+    .question-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .q-number {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 3px 10px;
+      font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .question-card.answered .q-number {
+      background: var(--primary-dim); border-color: var(--primary); color: var(--primary);
+    }
+    .q-tema { font-size: 0.7rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .question-text { font-size: 0.97rem; font-weight: 500; color: var(--text); margin-bottom: 20px; line-height: 1.7; }
+    .options-list { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 13px 16px;
+      cursor: pointer; text-align: left;
+      transition: border-color 0.18s, background 0.18s;
+      width: 100%; font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; color: var(--text); line-height: 1.5;
+    }
+    .option-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-dim); }
+    .option-btn.selected { border-color: var(--primary); background: var(--primary-dim); }
+    .option-btn:disabled { cursor: not-allowed; opacity: 0.65; }
+    .option-letter {
+      flex-shrink: 0; width: 26px; height: 26px;
+      border: 2px solid var(--border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.73rem; font-weight: 700; color: var(--text-muted);
+      transition: border-color 0.18s, background 0.18s, color 0.18s;
+    }
+    .option-btn.selected .option-letter { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .option-text { flex: 1; padding-top: 2px; }
+
+    /* ─────────────────────────────────────────────
+       Dots navigator
+    ───────────────────────────────────────────── */
+    .dots-wrapper {
+      max-width: 700px; margin: 16px auto 0;
+      padding: 0 20px;
+      overflow-x: auto;
+    }
+    .dots-nav {
+      display: flex; gap: 6px; padding: 8px 0;
+      min-width: max-content;
+    }
+    .dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem; font-weight: 700; color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    .dot:hover { border-color: var(--primary); transform: scale(1.1); }
+    .dot.answered { background: var(--primary-dim); border-color: var(--primary); color: var(--primary); }
+    .dot.current { background: var(--primary); border-color: var(--primary); color: #fff; transform: scale(1.18); }
+
+    /* ─────────────────────────────────────────────
+       Barra de navegación inferior
+    ───────────────────────────────────────────── */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(17,24,39,0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+    }
+    .bottom-bar-inner {
+      max-width: 700px; margin: 0 auto;
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .btn-nav {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
+      padding: 10px 18px; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .btn-nav:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-dim); }
+    .btn-nav:disabled { opacity: 0.35; cursor: not-allowed; }
+    .q-position-label {
+      flex: 1; text-align: center;
+      font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+    }
+    .q-position-label strong { color: var(--text); }
+    .btn-submit {
+      background: var(--success); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 700;
+      padding: 10px 22px; cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-submit:hover:not(:disabled) { background: #0da271; box-shadow: 0 4px 20px rgba(16,185,129,0.35); }
+    .btn-submit:active:not(:disabled) { transform: scale(0.98); }
+    .btn-submit:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 3: Confirmación
+    ───────────────────────────────────────────── */
+    #screen-confirmacion {
+      min-height: 100vh;
+      align-items: center; justify-content: center;
+      padding: 24px; flex-direction: column;
+    }
+    .confirm-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 40px 36px;
+      width: 100%; max-width: 480px; text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .confirm-icon { font-size: 52px; margin-bottom: 18px; display: block; }
+    .confirm-card h2 { font-size: 1.4rem; font-weight: 800; color: var(--success); margin-bottom: 8px; }
+    .confirm-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+    .detail-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+    .detail-table tr { border-bottom: 1px solid var(--border); }
+    .detail-table tr:last-child { border-bottom: none; }
+    .detail-table td { padding: 11px 8px; vertical-align: top; }
+    .detail-table td:first-child { color: var(--text-muted); font-weight: 600; width: 44%; white-space: nowrap; }
+    .detail-table td:last-child { color: var(--text); }
+    .confirm-note {
+      margin-top: 22px; font-size: 0.75rem; color: var(--text-muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 14px; text-align: left; line-height: 1.55;
+    }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 4: Terminado por infracciones
+    ───────────────────────────────────────────── */
+    #screen-terminado {
+      min-height: 100vh;
+      align-items: center; justify-content: center;
+      padding: 24px; flex-direction: column;
+    }
+    .term-card {
+      background: var(--surface);
+      border: 2px solid var(--danger);
+      border-radius: 20px; padding: 48px 36px;
+      max-width: 480px; width: 100%; text-align: center;
+      box-shadow: 0 0 60px rgba(239,68,68,0.2);
+    }
+    .term-icon { font-size: 60px; margin-bottom: 20px; display: block; }
+    .term-card h2 {
+      font-size: 1.5rem; font-weight: 800;
+      color: var(--danger); margin-bottom: 16px;
+    }
+    .term-card p {
+      font-size: 0.97rem; color: var(--text);
+      line-height: 1.65; margin-bottom: 12px;
+    }
+    .term-card .term-contact {
+      margin-top: 24px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      font-size: 0.88rem; color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .term-card .term-contact strong { color: var(--danger); }
+
+    /* ─────────────────────────────────────────────
+       SCREEN 5: Bloqueado (ya envió)
+    ───────────────────────────────────────────── */
+    #screen-bloqueado {
+      min-height: 100vh;
+      align-items: center; justify-content: center;
+      padding: 24px; flex-direction: column;
+    }
+    .lock-card {
+      background: var(--surface);
+      border: 2px solid var(--warning);
+      border-radius: 20px; padding: 48px 36px;
+      max-width: 480px; width: 100%; text-align: center;
+      box-shadow: 0 0 60px rgba(245,158,11,0.15);
+    }
+    .lock-icon { font-size: 60px; margin-bottom: 20px; display: block; }
+    .lock-card h2 { font-size: 1.5rem; font-weight: 800; color: var(--warning); margin-bottom: 14px; }
+    .lock-card p { font-size: 0.95rem; color: var(--text); line-height: 1.65; margin-bottom: 6px; }
+    .lock-codigo {
+      display: inline-block;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 18px;
+      font-family: 'JetBrains Mono', monospace; font-size: 1.05rem;
+      color: var(--accent); margin: 8px 0 16px; letter-spacing: 0.05em;
+    }
+    .lock-contact {
+      margin-top: 24px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius-sm); padding: 14px 18px;
+      font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;
+    }
+    .lock-contact strong { color: var(--warning); }
+    /* Estado de verificación en el botón */
+    .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+
+    /* ─────────────────────────────────────────────
+       Responsive
+    ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .registro-card, .confirm-card, .term-card, .adv-card { padding: 28px 20px; }
+      .exam-header-inner { padding: 10px 14px; gap: 8px; }
+      .question-wrapper { padding: 18px 14px 10px; }
+      .question-card { padding: 20px 16px; }
+      .bottom-bar-inner { padding: 10px 14px; }
+      .dots-wrapper { padding: 0 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Overlay: Enviando ═══ -->
+<div id="overlay-sending" role="status" aria-live="polite">
+  <div class="spinner"></div>
+  <div class="overlay-text">Enviando respuestas…</div>
+</div>
+
+<!-- ═══ Overlay: Advertencia de salida ═══ -->
+<div id="overlay-advertencia" role="alertdialog" aria-modal="true" aria-labelledby="adv-title">
+  <div class="adv-card">
+    <span class="adv-icon">⚠️</span>
+    <h2 id="adv-title">Salida detectada</h2>
+    <p class="adv-msg">Ud ha salido del entorno de evaluación.</p>
+    <div class="adv-counter" id="adv-counter">Advertencia 1 de 3</div>
+    <button class="btn-regresar" id="btn-regresar">Regresar al examen</button>
+    <p class="adv-warning-note">
+      A la tercera salida, el examen finalizará automáticamente <strong>sin enviar</strong> sus respuestas.
+    </p>
+  </div>
+</div>
+
+<!-- ═══ Screen 5: Bloqueado (ya envió) ═══ -->
+<section id="screen-bloqueado" class="screen" role="main">
+  <div class="lock-card">
+    <span class="lock-icon">🔒</span>
+    <h2>Evaluación ya registrada</h2>
+    <p>El código de estudiante</p>
+    <span class="lock-codigo" id="lock-codigo-display">—</span>
+    <p>ya tiene una evaluación enviada en el sistema.</p>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">
+      No es posible realizar el examen más de una vez.
+    </p>
+    <div class="lock-contact">
+      Si crees que esto es un error, comunícate con el docente:<br>
+      <strong>Danny Herrera Nájar</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Screen 1: Registro ═══ -->
+<section id="screen-registro" class="screen active" role="main">
+  <div class="registro-card">
+    <div class="logo-area">
+      <div class="logo-icon">📝</div>
+      <h1>Evaluación Tema 4<br>Fundamentos de Programación</h1>
+      <p>CIIN1205P – Cadenas de caracteres y arreglos paralelos</p>
+    </div>
+
+    <div class="exam-info-strip">
+      <div class="info-badge">
+        <span class="badge-val">20</span>
+        <span class="badge-lbl">Preguntas</span>
+      </div>
+      <div class="info-badge">
+        <span class="badge-val">45</span>
+        <span class="badge-lbl">Minutos</span>
+      </div>
+      <div class="info-badge">
+        <span class="badge-val">4</span>
+        <span class="badge-lbl">Temas</span>
+      </div>
+    </div>
+
+    <form id="form-registro" novalidate>
+      <div class="form-group">
+        <label for="input-nombres">Nombre(s)</label>
+        <input type="text" id="input-nombres" placeholder="Ej. Juan Carlos" autocomplete="given-name" required />
+      </div>
+      <div class="form-group">
+        <label for="input-apellidos">Apellidos</label>
+        <input type="text" id="input-apellidos" placeholder="Ej. García López" autocomplete="family-name" required />
+      </div>
+      <div class="form-group">
+        <label for="input-codigo">Código de estudiante</label>
+        <input type="text" id="input-codigo" placeholder="Ej. 20211234" autocomplete="off" required />
+      </div>
+      <button type="submit" class="btn-primary">Iniciar Evaluación →</button>
+    </form>
+
+    <p class="disclaimer">Al iniciar, el temporizador comenzará de inmediato. Mantén esta pestaña activa durante toda la evaluación.</p>
+  </div>
+</section>
+
+<!-- ═══ Screen 2: Examen ═══ -->
+<section id="screen-examen" class="screen" role="main">
+
+  <header class="exam-header">
+    <div class="exam-header-inner">
+      <div class="exam-title-block">
+        <h2>Evaluación – Tema 4</h2>
+        <p id="header-student-info">CIIN1205P</p>
+      </div>
+      <div class="header-stats">
+        <div class="progress-pill"><span id="progress-count">0</span>/20 respondidas</div>
+        <div class="timer-display" id="timer-display">45:00</div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+  </header>
+
+  <!-- Pregunta actual -->
+  <div class="question-wrapper">
+    <div id="question-area"><!-- Inyectado por JS --></div>
+  </div>
+
+  <!-- Navegador de puntos -->
+  <div class="dots-wrapper">
+    <div class="dots-nav" id="dots-nav"></div>
+  </div>
+
+  <!-- Barra de navegación fija -->
+  <div class="bottom-bar">
+    <div class="bottom-bar-inner">
+      <button class="btn-nav" id="btn-anterior" disabled>← Anterior</button>
+      <span class="q-position-label"><strong id="q-current-num">1</strong> / 20</span>
+      <button class="btn-nav" id="btn-siguiente">Siguiente →</button>
+      <button class="btn-submit" id="btn-submit" style="display:none">✅ Enviar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Screen 3: Confirmación ═══ -->
+<section id="screen-confirmacion" class="screen" role="main">
+  <div class="confirm-card">
+    <span class="confirm-icon">✅</span>
+    <h2>Evaluación Enviada</h2>
+    <p>Tus respuestas han sido registradas. El docente comunicará los resultados.</p>
+    <table class="detail-table">
+      <tbody>
+        <tr><td>Nombre</td><td id="confirm-nombre">—</td></tr>
+        <tr><td>Código</td><td id="confirm-codigo">—</td></tr>
+        <tr><td>Respondidas</td><td id="confirm-respondidas">—</td></tr>
+        <tr><td>Hora de envío</td><td id="confirm-timestamp">—</td></tr>
+      </tbody>
+    </table>
+    <div class="confirm-note">
+      ⚠️ No cierres esta ventana. Si hubo algún problema al enviar, comunícate con el docente e indica tu código de estudiante.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Screen 4: Terminado por infracciones ═══ -->
+<section id="screen-terminado" class="screen" role="main">
+  <div class="term-card">
+    <span class="term-icon">🚫</span>
+    <h2>Examen Finalizado</h2>
+    <p>Ha excedido el número de advertencias de salida del examen.</p>
+    <p>Sus respuestas <strong>no han sido enviadas</strong> al sistema.</p>
+    <div class="term-contact">
+      📩 Contacte con el docente:<br>
+      <strong>Danny Herrera Nájar</strong>
+    </div>
+  </div>
+</section>
+
+<script>
+  'use strict';
+
+  // ═══════════════════════════════════════════════════════════════
+  // ⬇️ PROFESOR: URL del Apps Script de EVALUACIÓN
+  const EVAL_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzRTKfTNCpd-OE3S6tnAfBSzKYziDge_XQJ3C_nDNtkuQ2jpU6OtBHJNMiV5Ptf8s1u2w/exec';
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── Banco de 40 preguntas (SIN respuestas) ───────────────────
+  const QUESTION_BANK = [
+    // ── Tema 4.1 ──
+    { id:'q01', tema:'4.1', enunciado:'¿Cuál es la forma correcta de declarar un <code>string</code> en C#?',
+      opciones:{ A:'<code>string nombre = "Juan";</code>', B:"<code>String nombre = 'Juan';</code>", C:'<code>str nombre = "Juan";</code>', D:'<code>text nombre = "Juan";</code>' }},
+    { id:'q02', tema:'4.1', enunciado:'¿Qué operador se usa para <strong>concatenar</strong> cadenas en C#?',
+      opciones:{ A:'<code>&amp;</code>', B:'<code>.</code>', C:'<code>+</code>', D:'<code>*</code>' }},
+    { id:'q03', tema:'4.1', enunciado:'¿Qué significa que las cadenas son <em>inmutables</em> en C#?',
+      opciones:{ A:'No se pueden declarar sin valor inicial', B:'No se pueden comparar con <code>==</code>', C:'Una vez creadas, su contenido no puede modificarse en memoria', D:'Solo pueden contener letras del alfabeto' }},
+    { id:'q04', tema:'4.1', enunciado:'¿Cuál es el resultado de <code>"Hola".Length</code> en C#?',
+      opciones:{ A:'<code>3</code>', B:'<code>4</code>', C:'<code>5</code>', D:'Error de compilación' }},
+    { id:'q05', tema:'4.1', enunciado:'¿Qué secuencia de escape se usa para incluir comillas dobles dentro de un <code>string</code> en C#?',
+      opciones:{ A:'<code>\'</code>', B:'<code>\"</code>', C:'<code>\\n</code>', D:'<code>\\t</code>' }},
+    { id:'q06', tema:'4.1', enunciado:'¿Cómo se accede al <strong>primer</strong> carácter de una cadena <code>s</code> en C#?',
+      opciones:{ A:'<code>s.first()</code>', B:'<code>s[1]</code>', C:'<code>s[0]</code>', D:'<code>s.charAt(0)</code>' }},
+    { id:'q07', tema:'4.1', enunciado:'¿Cuál es la sintaxis correcta de <em>interpolación de cadenas</em> en C#?',
+      opciones:{ A:'<code>"Hola " + nombre</code>', B:'<code>$"Hola {nombre}"</code>', C:'<code>"Hola #{nombre}"</code>', D:'<code>f"Hola {nombre}"</code>' }},
+    { id:'q08', tema:'4.1', enunciado:'En Python, ¿cómo se obtiene la longitud de una cadena <code>s</code>?',
+      opciones:{ A:'<code>s.length</code>', B:'<code>s.Length</code>', C:'<code>length(s)</code>', D:'<code>len(s)</code>' }},
+    { id:'q09', tema:'4.1', enunciado:'¿Qué tipo de dato almacena un <strong>solo carácter</strong> en C#?',
+      opciones:{ A:'<code>string</code>', B:'<code>char</code>', C:'<code>character</code>', D:'<code>letter</code>' }},
+    { id:'q10', tema:'4.1', enunciado:'¿Cuál es el resultado de <code>"abc" == "ABC"</code> en C#?',
+      opciones:{ A:'<code>true</code>', B:'<code>false</code>', C:'Error de compilación', D:'<code>null</code>' }},
+    // ── Tema 4.2 ──
+    { id:'q11', tema:'4.2', enunciado:'¿Qué método convierte una cadena a <strong>mayúsculas</strong> en C#?',
+      opciones:{ A:'<code>ToUpper()</code>', B:'<code>Upper()</code>', C:'<code>toUpper()</code>', D:'<code>Capitalize()</code>' }},
+    { id:'q12', tema:'4.2', enunciado:'¿Qué hace el método <code>Trim()</code> en C#?',
+      opciones:{ A:'Elimina todos los espacios dentro de la cadena', B:'Elimina los espacios al inicio y al final', C:'Reemplaza espacios por guiones', D:'Cuenta los espacios en la cadena' }},
+    { id:'q13', tema:'4.2', enunciado:'¿Qué valor retorna <code>"hola mundo".IndexOf("mundo")</code> en C#?',
+      opciones:{ A:'<code>0</code>', B:'<code>4</code>', C:'<code>5</code>', D:'<code>-1</code>' }},
+    { id:'q14', tema:'4.2', enunciado:'¿Qué retorna <code>"programacion".Substring(0, 7)</code> en C#?',
+      opciones:{ A:'<code>"program"</code>', B:'<code>"programac"</code>', C:'<code>"rogramac"</code>', D:'<code>"programaci"</code>' }},
+    { id:'q15', tema:'4.2', enunciado:'¿Qué método reemplaza <strong>todas</strong> las ocurrencias de un substring en C#?',
+      opciones:{ A:'<code>Change()</code>', B:'<code>Swap()</code>', C:'<code>Replace()</code>', D:'<code>Modify()</code>' }},
+    { id:'q16', tema:'4.2', enunciado:'¿Qué retorna <code>"cadena".Contains("den")</code> en C#?',
+      opciones:{ A:'<code>false</code>', B:'<code>3</code>', C:'<code>true</code>', D:'<code>"den"</code>' }},
+    { id:'q17', tema:'4.2', enunciado:'¿Qué hace el método <code>Split()</code> en C#?',
+      opciones:{ A:'Divide la cadena en caracteres individuales', B:'Divide la cadena en partes usando un separador', C:'Elimina un carácter específico', D:'Busca un substring dentro de la cadena' }},
+    { id:'q18', tema:'4.2', enunciado:'¿Cuál es el equivalente de <code>ToLower()</code> en Python?',
+      opciones:{ A:'<code>toLower()</code>', B:'<code>lower()</code>', C:'<code>to_lower()</code>', D:'<code>lowercase()</code>' }},
+    { id:'q19', tema:'4.2', enunciado:'En Python, ¿cómo se obtienen todos los caracteres de <code>s</code> desde el índice 3 hasta el final?',
+      opciones:{ A:'<code>s[3:]</code>', B:'<code>s.substring(3)</code>', C:'<code>s[3]</code>', D:'<code>s[:3]</code>' }},
+    { id:'q20', tema:'4.2', enunciado:'¿Qué valor retorna <code>IndexOf()</code> cuando <strong>no encuentra</strong> el substring en C#?',
+      opciones:{ A:'<code>0</code>', B:'<code>null</code>', C:'<code>false</code>', D:'<code>-1</code>' }},
+    // ── Tema 4.3 ──
+    { id:'q21', tema:'4.3', enunciado:'¿Cuál es la declaración correcta de un arreglo de 5 enteros en C#?',
+      opciones:{ A:'<code>int[] nums = new int[5];</code>', B:'<code>int nums[5];</code>', C:'<code>array&lt;int&gt; nums = 5;</code>', D:'<code>int nums = new array(5);</code>' }},
+    { id:'q22', tema:'4.3', enunciado:'¿Cuál es el índice del <strong>primer</strong> elemento de un arreglo en C#?',
+      opciones:{ A:'<code>1</code>', B:'<code>-1</code>', C:'<code>0</code>', D:'Depende del tipo de dato' }},
+    { id:'q23', tema:'4.3', enunciado:'Si un arreglo <code>arr</code> tiene 8 elementos, ¿cuál es el índice del <strong>último</strong>?',
+      opciones:{ A:'<code>8</code>', B:'<code>7</code>', C:'<code>9</code>', D:'<code>arr.Length</code>' }},
+    { id:'q24', tema:'4.3', enunciado:'¿Qué son los <strong>arreglos paralelos</strong>?',
+      opciones:{ A:'Arreglos que se ordenan simultáneamente', B:'Dos o más arreglos con igual cantidad de elementos donde el índice <code>i</code> relaciona datos entre ellos', C:'Arreglos que solo contienen números', D:'Arreglos declarados en la misma línea' }},
+    { id:'q25', tema:'4.3', enunciado:'¿Cómo se obtiene la longitud de un arreglo <code>arr</code> en C#?',
+      opciones:{ A:'<code>arr.length</code>', B:'<code>arr.size()</code>', C:'<code>length(arr)</code>', D:'<code>arr.Length</code>' }},
+    { id:'q26', tema:'4.3', enunciado:'Dado que <code>nombres[]</code> y <code>edades[]</code> son arreglos paralelos, ¿qué representa <code>edades[i]</code>?',
+      opciones:{ A:'La edad del primer estudiante', B:'La edad del último estudiante', C:'La edad del estudiante en <code>nombres[i]</code>', D:'La suma de todas las edades' }},
+    { id:'q27', tema:'4.3', enunciado:'¿Qué ocurre al acceder a <code>arr[arr.Length]</code> en C#?',
+      opciones:{ A:'Retorna <code>null</code>', B:'Retorna el último elemento', C:'Lanza una excepción <code>IndexOutOfRangeException</code>', D:'Retorna <code>0</code>' }},
+    { id:'q28', tema:'4.3', enunciado:'¿Cuál es el encabezado correcto de un <code>for</code> para recorrer <strong>todos</strong> los elementos de <code>arr</code>?',
+      opciones:{ A:'<code>for(int i=1; i&lt;=arr.Length; i++)</code>', B:'<code>for(int i=0; i&lt;arr.Length; i++)</code>', C:'<code>for(int i=0; i&lt;=arr.Length; i++)</code>', D:'<code>for(int i=1; i&lt;arr.Length; i++)</code>' }},
+    { id:'q29', tema:'4.3', enunciado:'¿Cuál es la declaración correcta de un arreglo de strings con valores iniciales en C#?',
+      opciones:{ A:'<code>string[] frutas = ["manzana", "pera"];</code>', B:'<code>string[] frutas = {"manzana", "pera"};</code>', C:'<code>string[] frutas = new string("manzana", "pera");</code>', D:'<code>string frutas[] = "manzana", "pera";</code>' }},
+    { id:'q30', tema:'4.3', enunciado:'Dado el código:<br><code>string[] dias = {"Lun", "Mar", "Mie"};<br>Console.WriteLine(dias[1]);</code><br>¿Qué se imprime?',
+      opciones:{ A:'<code>"Lun"</code>', B:'<code>"Mar"</code>', C:'<code>"Mie"</code>', D:'Error de ejecución' }},
+    // ── Tema 4.4 ──
+    { id:'q31', tema:'4.4', enunciado:'¿En qué consiste el algoritmo de <strong>ordenamiento burbuja</strong>?',
+      opciones:{ A:'Divide el arreglo en mitades recursivamente', B:'Compara elementos adyacentes e intercambia si están en orden incorrecto, repitiendo hasta ordenar', C:'Busca el mínimo y lo coloca al inicio en cada pasada', D:'Inserta cada elemento en su posición correcta' }},
+    { id:'q32', tema:'4.4', enunciado:'En burbuja <strong>ascendente</strong>, ¿cuándo se intercambia <code>arr[j]</code> con <code>arr[j+1]</code>?',
+      opciones:{ A:'Cuando <code>arr[j] &lt; arr[j+1]</code>', B:'Cuando <code>arr[j] == arr[j+1]</code>', C:'Cuando <code>arr[j] &gt; arr[j+1]</code>', D:'Siempre, sin condición' }},
+    { id:'q33', tema:'4.4', enunciado:'Para ordenar <code>n</code> elementos con burbuja, ¿cuántas pasadas externas se necesitan en el peor caso?',
+      opciones:{ A:'<code>n</code>', B:'<code>n / 2</code>', C:'<code>n - 1</code>', D:'<code>n²</code>' }},
+    { id:'q34', tema:'4.4', enunciado:'¿Qué valor retorna habitualmente una búsqueda lineal cuando el elemento <strong>no se encuentra</strong>?',
+      opciones:{ A:'<code>0</code>', B:'<code>false</code>', C:'<code>null</code>', D:'<code>-1</code>' }},
+    { id:'q35', tema:'4.4', enunciado:'¿Qué retorna <code>String.Compare("abc", "abc")</code> en C#?',
+      opciones:{ A:'<code>true</code>', B:'<code>-1</code>', C:'<code>0</code>', D:'<code>1</code>' }},
+    { id:'q36', tema:'4.4', enunciado:'¿Cuál es la secuencia correcta para intercambiar <code>arr[j]</code> y <code>arr[j+1]</code> en C#?',
+      opciones:{ A:'<code>arr[j] = arr[j+1]; arr[j+1] = arr[j];</code>', B:'<code>string temp = arr[j]; arr[j] = arr[j+1]; arr[j+1] = temp;</code>', C:'<code>arr[j] &lt;-&gt; arr[j+1];</code>', D:'<code>swap(arr[j], arr[j+1]);</code>' }},
+    { id:'q37', tema:'4.4', enunciado:'¿Cuál es la complejidad en el <strong>peor caso</strong> de la búsqueda lineal en <code>n</code> elementos?',
+      opciones:{ A:'<code>O(1)</code>', B:'<code>O(log n)</code>', C:'<code>O(n)</code>', D:'<code>O(n²)</code>' }},
+    { id:'q38', tema:'4.4', enunciado:'¿Qué retorna <code>"banana".CompareTo("apple")</code> en C#?',
+      opciones:{ A:'Un número negativo', B:'<code>0</code>', C:'Un número positivo', D:'<code>true</code>' }},
+    { id:'q39', tema:'4.4', enunciado:'En burbuja <strong>descendente</strong>, ¿cuándo se intercambia <code>arr[j]</code> con <code>arr[j+1]</code>?',
+      opciones:{ A:'Cuando <code>arr[j] &gt; arr[j+1]</code>', B:'Cuando <code>arr[j] &lt; arr[j+1]</code>', C:'Cuando <code>arr[j] == arr[j+1]</code>', D:'Nunca' }},
+    { id:'q40', tema:'4.4', enunciado:'Si el elemento buscado está en la <strong>primera posición</strong>, ¿cuántas comparaciones realiza la búsqueda lineal?',
+      opciones:{ A:'<code>n</code> comparaciones', B:'<code>n / 2</code> comparaciones', C:'1 comparación', D:'0 comparaciones' }}
+  ];
+
+  // ══════════════════════════════════════════════
+  // ESTADO
+  // ══════════════════════════════════════════════
+  let studentData     = {};
+  let activeQuestions = [];
+  let answers         = {};
+  let currentQ        = 0;      // índice 0-19 de la pregunta visible
+  let timerInterval   = null;
+  let secondsLeft     = 45 * 60;
+  let submitted       = false;
+
+  // ── Advertencias ──
+  let advertencias      = 0;    // cuántas salidas se han detectado
+  let advertenciaActiva = false; // overlay visible ahora
+  let enExamen          = false; // solo detectar si estamos en el examen
+
+  // ══════════════════════════════════════════════
+  // UTILIDADES
+  // ══════════════════════════════════════════════
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function formatTime(secs) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function countAnswered() {
+    return activeQuestions.filter(q => answers[q.id] !== '').length;
+  }
+
+  // ══════════════════════════════════════════════
+  // ALMACENAMIENTO LOCAL NIVEL 1-B: IndexedDB
+  // ══════════════════════════════════════════════
+  const IDB_NAME    = 'eval_funpro_t4';
+  const IDB_STORE   = 'bloqueados';
+  const IDB_VERSION = 1;
+
+  function idbAbrir() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(IDB_NAME, IDB_VERSION);
+      r.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+      r.onsuccess = e => res(e.target.result);
+      r.onerror   = e => rej(e.target.error);
+    });
+  }
+
+  async function idbGuardar(key, value) {
+    try {
+      const db = await idbAbrir();
+      await new Promise((res, rej) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+      });
+      db.close();
+    } catch (_) {}
+  }
+
+  async function idbLeer(key) {
+    try {
+      const db = await idbAbrir();
+      const val = await new Promise((res, rej) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const r2 = tx.objectStore(IDB_STORE).get(key);
+        r2.onsuccess = () => res(r2.result ?? null);
+        r2.onerror   = e => rej(e.target.error);
+      });
+      db.close();
+      return val;
+    } catch (_) { return null; }
+  }
+
+  async function estaBloqueado(codigo) {
+    const key = `eval_t4_${codigo.trim().toLowerCase()}`;
+    if (localStorage.getItem(key)) return true;
+    if (await idbLeer(key))        return true;
+    return false;
+  }
+
+  async function bloquearLocalmente(codigo, extra = {}) {
+    const key  = `eval_t4_${codigo.trim().toLowerCase()}`;
+    const data = JSON.stringify({ ts: Date.now(), ...extra });
+    localStorage.setItem(key, data);
+    await idbGuardar(key, data);
+  }
+
+  // ══════════════════════════════════════════════
+  // SCREEN 1: REGISTRO
+  // ══════════════════════════════════════════════
+  // Verificación inmediata al salir del campo código (UX: bloqueo antes de hacer clic)
+  document.getElementById('input-codigo').addEventListener('blur', async function() {
+    const codigo = this.value.trim();
+    if (!codigo) return;
+    if (await estaBloqueado(codigo)) mostrarBloqueado(codigo);
+  });
+
+  document.getElementById('form-registro').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const nombres   = document.getElementById('input-nombres').value.trim();
+    const apellidos = document.getElementById('input-apellidos').value.trim();
+    const codigo    = document.getElementById('input-codigo').value.trim();
+
+    if (!nombres || !apellidos || !codigo) {
+      alert('Por favor completa todos los campos antes de continuar.');
+      return;
+    }
+
+    const btn = document.querySelector('#form-registro .btn-primary');
+
+    // ── Nivel 1: localStorage + IndexedDB ───────────────────────
+    btn.textContent = 'Verificando… ⏳';
+    btn.disabled = true;
+
+    if (await estaBloqueado(codigo)) {
+      btn.textContent = 'Iniciar Evaluación →';
+      btn.disabled = false;
+      mostrarBloqueado(codigo);
+      return;
+    }
+
+    // ── Nivel 2: consulta al servidor (solo funciona en http/https) ─
+    if (window.location.protocol !== 'file:') {
+      try {
+        const resultado = await verificarCodigo(codigo);
+        if (resultado && resultado.yaEnviado) {
+          await bloquearLocalmente(codigo, { fromServer: true });
+          btn.textContent = 'Iniciar Evaluación →';
+          btn.disabled = false;
+          mostrarBloqueado(codigo);
+          return;
+        }
+      } catch (_) {}
+    }
+
+    btn.textContent = 'Iniciar Evaluación →';
+    btn.disabled = false;
+
+    studentData = { nombres, apellidos, codigo };
+    startExam();
+  });
+
+  // ══════════════════════════════════════════════
+  // INICIAR EXAMEN
+  // ══════════════════════════════════════════════
+  function startExam() {
+    activeQuestions = shuffle(QUESTION_BANK).slice(0, 20);
+    answers = {};
+    activeQuestions.forEach(q => { answers[q.id] = ''; });
+
+    currentQ = 0;
+    advertencias = 0;
+    advertenciaActiva = false;
+    submitted = false;
+    enExamen = true;
+
+    // Info del estudiante en el header
+    document.getElementById('header-student-info').textContent =
+      `${studentData.nombres} ${studentData.apellidos} · ${studentData.codigo}`;
+
+    buildDots();
+    renderQuestion(0);
+    startTimer();
+    showScreen('screen-examen');
+    window.scrollTo(0, 0);
+  }
+
+  // ══════════════════════════════════════════════
+  // RENDERIZAR PREGUNTA ACTUAL
+  // ══════════════════════════════════════════════
+  function renderQuestion(idx) {
+    currentQ = idx;
+    const q = activeQuestions[idx];
+    const area = document.getElementById('question-area');
+    const letras = ['A', 'B', 'C', 'D'];
+    const yaRespondida = answers[q.id] !== '';
+
+    area.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'question-card' + (yaRespondida ? ' answered' : '');
+
+    // Meta
+    const meta = document.createElement('div');
+    meta.className = 'question-meta';
+    meta.innerHTML = `<span class="q-number">P${String(idx + 1).padStart(2,'0')}</span><span class="q-tema">Tema ${q.tema}</span>`;
+
+    // Enunciado
+    const qtxt = document.createElement('div');
+    qtxt.className = 'question-text';
+    qtxt.innerHTML = q.enunciado;
+
+    // Opciones
+    const opts = document.createElement('div');
+    opts.className = 'options-list';
+
+    letras.forEach(letra => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-btn' + (answers[q.id] === letra ? ' selected' : '');
+      btn.dataset.qid = q.id;
+      btn.dataset.letra = letra;
+      if (submitted) btn.disabled = true;
+      btn.innerHTML = `<span class="option-letter">${letra}</span><span class="option-text">${q.opciones[letra]}</span>`;
+      btn.addEventListener('click', () => selectOption(q.id, letra));
+      opts.appendChild(btn);
+    });
+
+    card.appendChild(meta);
+    card.appendChild(qtxt);
+    card.appendChild(opts);
+    area.appendChild(card);
+
+    updateNavUI();
+    updateDots();
+    updateProgress();
+  }
+
+  // ══════════════════════════════════════════════
+  // SELECCIONAR OPCIÓN
+  // ══════════════════════════════════════════════
+  function selectOption(qid, letra) {
+    if (submitted || advertenciaActiva) return;
+
+    answers[qid] = letra;
+
+    // Actualizar botones en DOM
+    document.querySelectorAll(`.option-btn[data-qid="${qid}"]`).forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.letra === letra);
+    });
+    const card = document.getElementById('question-area').querySelector('.question-card');
+    if (card) card.classList.add('answered');
+
+    updateProgress();
+    updateDots();
+  }
+
+  // ══════════════════════════════════════════════
+  // PROGRESO Y UI DE NAVEGACIÓN
+  // ══════════════════════════════════════════════
+  function updateProgress() {
+    const answered = countAnswered();
+    document.getElementById('progress-count').textContent = answered;
+    document.getElementById('progress-bar').style.width = (answered / 20 * 100) + '%';
+  }
+
+  function updateNavUI() {
+    const idx = currentQ;
+    const isFirst = idx === 0;
+    const isLast  = idx === activeQuestions.length - 1;
+
+    document.getElementById('btn-anterior').disabled = isFirst;
+    document.getElementById('q-current-num').textContent = idx + 1;
+
+    const btnSig    = document.getElementById('btn-siguiente');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    if (isLast) {
+      btnSig.style.display    = 'none';
+      btnSubmit.style.display = 'inline-block';
+    } else {
+      btnSig.style.display    = 'inline-block';
+      btnSubmit.style.display = 'none';
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  // DOTS NAVIGATOR
+  // ══════════════════════════════════════════════
+  function buildDots() {
+    const nav = document.getElementById('dots-nav');
+    nav.innerHTML = '';
+    activeQuestions.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'dot';
+      dot.textContent = i + 1;
+      dot.setAttribute('aria-label', `Pregunta ${i + 1}`);
+      dot.addEventListener('click', () => renderQuestion(i));
+      nav.appendChild(dot);
+    });
+  }
+
+  function updateDots() {
+    const dots = document.querySelectorAll('#dots-nav .dot');
+    dots.forEach((dot, i) => {
+      dot.classList.remove('current', 'answered');
+      if (i === currentQ) dot.classList.add('current');
+      else if (answers[activeQuestions[i].id] !== '') dot.classList.add('answered');
+    });
+
+    // Scroll dot into view
+    const activeDot = dots[currentQ];
+    if (activeDot) activeDot.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  // ══════════════════════════════════════════════
+  // NAVEGACIÓN: Anterior / Siguiente
+  // ══════════════════════════════════════════════
+  document.getElementById('btn-anterior').addEventListener('click', () => {
+    if (currentQ > 0) renderQuestion(currentQ - 1);
+  });
+
+  document.getElementById('btn-siguiente').addEventListener('click', () => {
+    if (currentQ < activeQuestions.length - 1) renderQuestion(currentQ + 1);
+  });
+
+  // ══════════════════════════════════════════════
+  // ENVIAR
+  // ══════════════════════════════════════════════
+  document.getElementById('btn-submit').addEventListener('click', () => {
+    if (submitted) return;
+    const unanswered = activeQuestions.length - countAnswered();
+
+    if (unanswered > 0) {
+      const ok = confirm(
+        `Tienes ${unanswered} pregunta${unanswered > 1 ? 's' : ''} sin responder ` +
+        `(se contarán como incorrectas).\n\n¿Deseas enviar de todas formas?`
+      );
+      if (!ok) return;
+    } else {
+      if (!confirm('¿Estás seguro de que deseas enviar tu evaluación?')) return;
+    }
+
+    submitAnswers(false);
+  });
+
+  function disableAllOptions() {
+    document.querySelectorAll('.option-btn').forEach(btn => { btn.disabled = true; });
+    document.getElementById('btn-submit').disabled = true;
+  }
+
+  async function submitAnswers(porTiempo) {
+    if (submitted) return;
+    submitted = true;
+    enExamen = false;
+
+    // ── Guardar localmente (localStorage + IndexedDB) ─────────────
+    bloquearLocalmente(studentData.codigo, { nombre: `${studentData.nombres} ${studentData.apellidos}` });
+
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    disableAllOptions();
+
+    const preguntasIds  = activeQuestions.map(q => q.id);
+    const respuestasArr = activeQuestions.map(q => answers[q.id] || '');
+    const timestamp     = new Date().toISOString();
+
+    const payload = {
+      tipo:       'evaluacion',
+      nombre:     studentData.nombres,
+      apellidos:  studentData.apellidos,
+      codigo:     studentData.codigo,
+      timestamp,
+      preguntas:  preguntasIds,
+      respuestas: respuestasArr,
+      porTiempo
+    };
+
+    document.getElementById('overlay-sending').classList.add('show');
+
+    try {
+      await fetch(EVAL_SHEETS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (_) { /* no-cors siempre resuelve */ }
+
+    document.getElementById('overlay-sending').classList.remove('show');
+    showConfirmation(payload);
+  }
+
+  // ══════════════════════════════════════════════
+  // SCREEN 3: CONFIRMACIÓN
+  // ══════════════════════════════════════════════
+  function showConfirmation(payload) {
+    const answered = payload.respuestas.filter(r => r !== '').length;
+    document.getElementById('confirm-nombre').textContent = `${payload.nombre} ${payload.apellidos}`;
+    document.getElementById('confirm-codigo').textContent = payload.codigo;
+    document.getElementById('confirm-respondidas').textContent = `${answered} / 20`;
+    document.getElementById('confirm-timestamp').textContent = new Date(payload.timestamp).toLocaleString('es-HN', { dateStyle: 'medium', timeStyle: 'short' });
+    showScreen('screen-confirmacion');
+    window.scrollTo(0, 0);
+  }
+
+  // ══════════════════════════════════════════════
+  // TIMER
+  // ══════════════════════════════════════════════
+  function startTimer() {
+    secondsLeft = 45 * 60;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      secondsLeft--;
+      updateTimerDisplay();
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+        submitAnswers(true);
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const el = document.getElementById('timer-display');
+    el.textContent = formatTime(secondsLeft);
+    el.classList.remove('warning', 'danger');
+    if (secondsLeft <= 5 * 60)       el.classList.add('danger');
+    else if (secondsLeft <= 10 * 60) el.classList.add('warning');
+  }
+
+  // ══════════════════════════════════════════════
+  // VERIFICACIÓN ANTI-REINTENTO
+  // ══════════════════════════════════════════════
+
+  /** Consulta al Apps Script vía fetch si el código ya fue enviado (solo http/https) */
+  async function verificarCodigo(codigo) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const url = EVAL_SHEETS_URL + '?action=verificar&codigo=' + encodeURIComponent(codigo);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) return await res.json();
+      return null;
+    } catch (_) {
+      clearTimeout(timer);
+      return null;
+    }
+  }
+
+  /** Muestra la pantalla de bloqueo */
+  function mostrarBloqueado(codigo) {
+    document.getElementById('lock-codigo-display').textContent = codigo;
+    showScreen('screen-bloqueado');
+    window.scrollTo(0, 0);
+  }
+
+  // ══════════════════════════════════════════════
+  // SISTEMA DE ADVERTENCIAS POR SALIDA
+  // ══════════════════════════════════════════════
+
+  /** Llamado cuando se detecta una salida (blur o visibilitychange) */
+  function registrarSalida() {
+    if (!enExamen || submitted || advertenciaActiva) return;
+
+    advertenciaActiva = true;
+    advertencias++;
+
+    if (advertencias >= 3) {
+      terminarPorInfraccion();
+    } else {
+      mostrarAdvertencia();
+    }
+  }
+
+  /** Muestra el overlay de advertencia */
+  function mostrarAdvertencia() {
+    const counter = document.getElementById('adv-counter');
+    counter.textContent = `Advertencia ${advertencias} de 3`;
+    counter.classList.toggle('danger-count', advertencias === 2);
+
+    document.getElementById('overlay-advertencia').classList.add('show');
+  }
+
+  /** Botón "Regresar al examen" */
+  document.getElementById('btn-regresar').addEventListener('click', () => {
+    document.getElementById('overlay-advertencia').classList.remove('show');
+    advertenciaActiva = false;
+  });
+
+  /** Termina el examen SIN enviar datos */
+  function terminarPorInfraccion() {
+    enExamen = false;
+    advertenciaActiva = false;
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+    if (studentData && studentData.codigo) {
+      bloquearLocalmente(studentData.codigo, { nombre: `${studentData.nombres} ${studentData.apellidos}`, infraccion: true });
+
+      // Enviar registro de infracción al servidor (Nivel 2)
+      // Así el Apps Script también bloqueará aunque borren el caché
+      const respondidas = activeQuestions
+        ? activeQuestions.filter(q => answers[q.id] !== '').length
+        : 0;
+
+      const payloadInfraccion = {
+        tipo:                'infraccion',
+        nombre:              studentData.nombres,
+        apellidos:           studentData.apellidos,
+        codigo:              studentData.codigo,
+        timestamp:           new Date().toISOString(),
+        advertencias:        3,
+        preguntasRespondidas: respondidas,
+        totalPreguntas:      activeQuestions ? activeQuestions.length : 20
+      };
+      console.log('[Infracción] Enviando al servidor:', payloadInfraccion);
+
+      fetch(EVAL_SHEETS_URL, {
+        method:  'POST',
+        mode:    'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadInfraccion)
+      })
+      .then(() => console.log('[Infracción] Fetch enviado (no-cors, sin confirmación de escritura)'))
+      .catch(err => console.error('[Infracción] Error en fetch:', err));
+    }
+
+    // Ocultar overlay de advertencia (por si está visible)
+    document.getElementById('overlay-advertencia').classList.remove('show');
+
+    // Mostrar pantalla de terminación
+    showScreen('screen-terminado');
+    window.scrollTo(0, 0);
+  }
+
+  // ── Detección de salida de pestaña (Tab switching) ──────────────
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) registrarSalida();
+  });
+
+  // ── Detección de salida de ventana (Alt+Tab, otro app) ──────────
+  // Solo si el documento sigue visible (evita doble conteo con visibilitychange)
+  window.addEventListener('blur', () => {
+    if (!document.hidden) registrarSalida();
+  });
+
+  // ── Intento de cerrar la pestaña (beforeunload) ──────────────────
+  window.addEventListener('beforeunload', (e) => {
+    if (enExamen && !submitted) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+</script>
+</body>
+</html>
