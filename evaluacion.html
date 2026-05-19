@@ -1160,35 +1160,43 @@
   // VERIFICACIÓN ANTI-REINTENTO
   // ══════════════════════════════════════════════
 
+  // Callback global fijo para JSONP — nombre estático para máxima compatibilidad Safari
+  var __evalChkPending = null;
+  function __evalChkFunpro(data) {
+    if (typeof __evalChkPending === 'function') {
+      var cb = __evalChkPending;
+      __evalChkPending = null;
+      cb(data);
+    }
+  }
+
   /** Consulta al Apps Script vía JSONP si el código ya fue enviado.
-   *  JSONP funciona desde https:// sin restricciones CORS.
    *  Desde file:// el browser lo bloquea → se omite (fail open). */
   function verificarCodigo(codigo) {
-    return new Promise((resolve) => {
+    return new Promise(function(resolve) {
       if (window.location.protocol === 'file:') { resolve(null); return; }
 
-      const cbName = '_evalChk_' + Date.now();
-      const script = document.createElement('script');
-      let done = false;
+      var resuelto = false;
+      var script   = document.createElement('script');
 
-      const cleanup = () => {
-        if (done) return;
-        done = true;
-        delete window[cbName];
+      var timer = setTimeout(function() {
+        if (!resuelto) { resuelto = true; __evalChkPending = null; resolve(null); }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }, 8000);
+
+      __evalChkPending = function(data) {
+        if (!resuelto) {
+          resuelto = true;
+          clearTimeout(timer);
+          resolve(data);
+        }
         if (script.parentNode) script.parentNode.removeChild(script);
       };
 
-      const timer = setTimeout(() => { cleanup(); resolve(null); }, 8000);
-
-      window[cbName] = (data) => { clearTimeout(timer); cleanup(); resolve(data); };
-      // No limpiar en onerror: en Safari/WebKit el redirect dispara onerror
-      // aunque el script sí cargue. El timer gestiona el timeout real.
-      script.onerror = () => {};
-
       script.src = EVAL_SHEETS_URL +
         '?action=verificar' +
-        '&codigo='   + encodeURIComponent(codigo) +
-        '&callback=' + cbName;
+        '&codigo='    + encodeURIComponent(codigo) +
+        '&callback=__evalChkFunpro';
 
       document.head.appendChild(script);
     });
