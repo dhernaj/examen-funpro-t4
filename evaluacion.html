@@ -1168,10 +1168,16 @@
       const url = EVAL_SHEETS_URL + '?action=verificar&codigo=' + encodeURIComponent(codigo);
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timer);
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[Nivel2] respuesta del servidor:', data);
+        return data;
+      }
+      console.warn('[Nivel2] respuesta no-ok, status:', res.status);
       return null;
-    } catch (_) {
+    } catch (err) {
       clearTimeout(timer);
+      console.warn('[Nivel2] fetch falló:', err.message);
       return null;
     }
   }
