@@ -780,70 +780,8 @@
   }
 
   // ══════════════════════════════════════════════
-  // ALMACENAMIENTO LOCAL NIVEL 1-B: IndexedDB
-  // ══════════════════════════════════════════════
-  const IDB_NAME    = 'eval_funpro_t4';
-  const IDB_STORE   = 'bloqueados';
-  const IDB_VERSION = 1;
-
-  function idbAbrir() {
-    return new Promise((res, rej) => {
-      const r = indexedDB.open(IDB_NAME, IDB_VERSION);
-      r.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
-      r.onsuccess = e => res(e.target.result);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-
-  async function idbGuardar(key, value) {
-    try {
-      const db = await idbAbrir();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).put(value, key);
-        tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
-      });
-      db.close();
-    } catch (_) {}
-  }
-
-  async function idbLeer(key) {
-    try {
-      const db = await idbAbrir();
-      const val = await new Promise((res, rej) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const r2 = tx.objectStore(IDB_STORE).get(key);
-        r2.onsuccess = () => res(r2.result ?? null);
-        r2.onerror   = e => rej(e.target.error);
-      });
-      db.close();
-      return val;
-    } catch (_) { return null; }
-  }
-
-  async function estaBloqueado(codigo) {
-    const key = `eval_t4_${codigo.trim().toLowerCase()}`;
-    if (localStorage.getItem(key)) return true;
-    if (await idbLeer(key))        return true;
-    return false;
-  }
-
-  async function bloquearLocalmente(codigo, extra = {}) {
-    const key  = `eval_t4_${codigo.trim().toLowerCase()}`;
-    const data = JSON.stringify({ ts: Date.now(), ...extra });
-    localStorage.setItem(key, data);
-    await idbGuardar(key, data);
-  }
-
-  // ══════════════════════════════════════════════
   // SCREEN 1: REGISTRO
   // ══════════════════════════════════════════════
-  // Verificación inmediata al salir del campo código (UX: bloqueo antes de hacer clic)
-  document.getElementById('input-codigo').addEventListener('blur', async function() {
-    const codigo = this.value.trim();
-    if (!codigo) return;
-    if (await estaBloqueado(codigo)) mostrarBloqueado(codigo);
-  });
 
   document.getElementById('form-registro').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -857,31 +795,18 @@
     }
 
     const btn = document.querySelector('#form-registro .btn-primary');
-
-    // ── Nivel 1: localStorage + IndexedDB ───────────────────────
     btn.textContent = 'Verificando… ⏳';
     btn.disabled = true;
 
-    if (await estaBloqueado(codigo)) {
-      btn.textContent = 'Iniciar Evaluación →';
-      btn.disabled = false;
-      mostrarBloqueado(codigo);
-      return;
-    }
-
-    // ── Nivel 2: consulta al servidor (solo funciona en http/https) ─
-    if (window.location.protocol !== 'file:') {
-      try {
-        const resultado = await verificarCodigo(codigo);
-        if (resultado && resultado.yaEnviado) {
-          await bloquearLocalmente(codigo, { fromServer: true });
-          btn.textContent = 'Iniciar Evaluación →';
-          btn.disabled = false;
-          mostrarBloqueado(codigo);
-          return;
-        }
-      } catch (_) {}
-    }
+    try {
+      const resultado = await verificarCodigo(codigo);
+      if (resultado && resultado.yaEnviado) {
+        btn.textContent = 'Iniciar Evaluación →';
+        btn.disabled = false;
+        mostrarBloqueado(codigo);
+        return;
+      }
+    } catch (_) {}
 
     btn.textContent = 'Iniciar Evaluación →';
     btn.disabled = false;
@@ -1084,9 +1009,6 @@
     submitted = true;
     enExamen = false;
 
-    // ── Guardar localmente (localStorage + IndexedDB) ─────────────
-    bloquearLocalmente(studentData.codigo, { nombre: `${studentData.nombres} ${studentData.apellidos}` });
-
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     disableAllOptions();
 
@@ -1249,7 +1171,6 @@
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
     if (studentData && studentData.codigo) {
-      bloquearLocalmente(studentData.codigo, { nombre: `${studentData.nombres} ${studentData.apellidos}`, infraccion: true });
 
       // Enviar registro de infracción al servidor (Nivel 2)
       // Así el Apps Script también bloqueará aunque borren el caché
