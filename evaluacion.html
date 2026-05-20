@@ -1082,45 +1082,24 @@
   // VERIFICACIÓN ANTI-REINTENTO
   // ══════════════════════════════════════════════
 
-  // Callback global fijo para JSONP — nombre estático para máxima compatibilidad Safari
-  var __evalChkPending = null;
-  function __evalChkFunpro(data) {
-    if (typeof __evalChkPending === 'function') {
-      var cb = __evalChkPending;
-      __evalChkPending = null;
-      cb(data);
-    }
-  }
-
-  /** Consulta al Apps Script vía JSONP si el código ya fue enviado.
-   *  Desde file:// el browser lo bloquea → se omite (fail open). */
+  /** Consulta al Apps Script vía XHR (más compatible con Safari + redirects CORS) */
   function verificarCodigo(codigo) {
     return new Promise(function(resolve) {
-      if (window.location.protocol === 'file:') { resolve(null); return; }
+      try {
+        var xhr   = new XMLHttpRequest();
+        var url   = EVAL_SHEETS_URL + '?action=verificar&codigo=' + encodeURIComponent(codigo);
+        var timer = setTimeout(function() { xhr.abort(); resolve(null); }, 8000);
 
-      var resuelto = false;
-      var script   = document.createElement('script');
-
-      var timer = setTimeout(function() {
-        if (!resuelto) { resuelto = true; __evalChkPending = null; resolve(null); }
-        if (script.parentNode) script.parentNode.removeChild(script);
-      }, 8000);
-
-      __evalChkPending = function(data) {
-        if (!resuelto) {
-          resuelto = true;
+        xhr.open('GET', url, true);
+        xhr.onload = function() {
           clearTimeout(timer);
-          resolve(data);
-        }
-        if (script.parentNode) script.parentNode.removeChild(script);
-      };
-
-      script.src = EVAL_SHEETS_URL +
-        '?action=verificar' +
-        '&codigo='    + encodeURIComponent(codigo) +
-        '&callback=__evalChkFunpro';
-
-      document.head.appendChild(script);
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch(e) { resolve(null); }
+        };
+        xhr.onerror  = function() { clearTimeout(timer); resolve(null); };
+        xhr.onabort  = function() { resolve(null); };
+        xhr.send();
+      } catch(e) { resolve(null); }
     });
   }
 
