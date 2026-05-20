@@ -323,9 +323,10 @@
       transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
       flex-shrink: 0;
     }
-    .dot:hover { border-color: var(--primary); transform: scale(1.1); }
+    .dot:hover:not(.locked) { border-color: var(--primary); transform: scale(1.1); }
     .dot.answered { background: var(--primary-dim); border-color: var(--primary); color: var(--primary); }
     .dot.current { background: var(--primary); border-color: var(--primary); color: #fff; transform: scale(1.18); }
+    .dot.locked { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
 
     /* ─────────────────────────────────────────────
        Barra de navegación inferior
@@ -743,6 +744,7 @@
   let activeQuestions = [];
   let answers         = {};
   let currentQ        = 0;      // índice 0-19 de la pregunta visible
+  let maxReached      = 0;      // índice más alto al que el alumno ha llegado
   let timerInterval   = null;
   let secondsLeft     = 45 * 60;
   let submitted       = false;
@@ -824,6 +826,7 @@
     activeQuestions.forEach(q => { answers[q.id] = ''; });
 
     currentQ = 0;
+    maxReached = 0;
     advertencias = 0;
     advertenciaActiva = false;
     submitted = false;
@@ -908,6 +911,7 @@
 
     updateProgress();
     updateDots();
+    updateNavUI();   // refresca "Siguiente" al responder
   }
 
   // ══════════════════════════════════════════════
@@ -930,12 +934,17 @@
     const btnSig    = document.getElementById('btn-siguiente');
     const btnSubmit = document.getElementById('btn-submit');
 
+    // La pregunta actual debe estar respondida para poder avanzar
+    const currentAnswered = activeQuestions.length > 0 &&
+                            answers[activeQuestions[idx].id] !== '';
+
     if (isLast) {
       btnSig.style.display    = 'none';
       btnSubmit.style.display = 'inline-block';
     } else {
       btnSig.style.display    = 'inline-block';
       btnSubmit.style.display = 'none';
+      btnSig.disabled = !currentAnswered;   // ← bloquear si no respondida
     }
   }
 
@@ -958,9 +967,16 @@
   function updateDots() {
     const dots = document.querySelectorAll('#dots-nav .dot');
     dots.forEach((dot, i) => {
-      dot.classList.remove('current', 'answered');
-      if (i === currentQ) dot.classList.add('current');
-      else if (answers[activeQuestions[i].id] !== '') dot.classList.add('answered');
+      dot.classList.remove('current', 'answered', 'locked');
+
+      if (i === currentQ) {
+        dot.classList.add('current');
+      } else if (i > maxReached) {
+        // Pregunta aún no alcanzada: bloqueada
+        dot.classList.add('locked');
+      } else if (answers[activeQuestions[i].id] !== '') {
+        dot.classList.add('answered');
+      }
     });
 
     // Scroll dot into view
@@ -976,7 +992,11 @@
   });
 
   document.getElementById('btn-siguiente').addEventListener('click', () => {
-    if (currentQ < activeQuestions.length - 1) renderQuestion(currentQ + 1);
+    if (currentQ < activeQuestions.length - 1) {
+      const nextIdx = currentQ + 1;
+      maxReached = Math.max(maxReached, nextIdx);   // ampliar frontera visible
+      renderQuestion(nextIdx);
+    }
   });
 
   // ══════════════════════════════════════════════
