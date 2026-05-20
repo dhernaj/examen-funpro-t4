@@ -471,6 +471,46 @@
     .btn-primary:disabled { opacity: 0.6; cursor: wait; }
 
     /* ─────────────────────────────────────────────
+       Selector de lenguaje
+    ───────────────────────────────────────────── */
+    .lang-label {
+      display: block; font-size: 0.82rem; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .lang-selector { display: flex; gap: 12px; margin-bottom: 22px; }
+    .lang-card {
+      flex: 1;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 10px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
+      font-family: 'Inter', sans-serif;
+    }
+    .lang-card:hover { border-color: var(--primary); background: var(--primary-dim); }
+    .lang-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+    }
+    .lang-icon { font-size: 30px; display: block; margin-bottom: 8px; }
+    .lang-name {
+      font-size: 1.05rem; font-weight: 800;
+      color: var(--text); display: block;
+      transition: color 0.2s;
+    }
+    .lang-card.selected .lang-name { color: var(--primary); }
+    .lang-sub { font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 3px; }
+    .lang-note {
+      font-size: 0.72rem; color: var(--text-muted);
+      text-align: center; margin-top: -14px; margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    /* ─────────────────────────────────────────────
        Responsive
     ───────────────────────────────────────────── */
     @media (max-width: 480px) {
@@ -548,6 +588,23 @@
     </div>
 
     <form id="form-registro" novalidate>
+
+      <!-- Selector de lenguaje -->
+      <span class="lang-label">Lenguaje de programación</span>
+      <div class="lang-selector">
+        <button type="button" class="lang-card" id="lang-cs" onclick="selectLanguage('CS')">
+          <span class="lang-icon">💠</span>
+          <span class="lang-name">C#</span>
+          <span class="lang-sub">Visual Studio / .NET</span>
+        </button>
+        <button type="button" class="lang-card" id="lang-py" onclick="selectLanguage('PY')">
+          <span class="lang-icon">🐍</span>
+          <span class="lang-name">Python</span>
+          <span class="lang-sub">Python 3.x</span>
+        </button>
+      </div>
+      <p class="lang-note">⚠️ Una vez iniciada la evaluación no podrás cambiar el lenguaje.</p>
+
       <div class="form-group">
         <label for="input-nombres">Nombre(s)</label>
         <input type="text" id="input-nombres" placeholder="Ej. Juan Carlos" autocomplete="given-name" required />
@@ -617,6 +674,7 @@
       <tbody>
         <tr><td>Nombre</td><td id="confirm-nombre">—</td></tr>
         <tr><td>Código</td><td id="confirm-codigo">—</td></tr>
+        <tr><td>Lenguaje</td><td id="confirm-lenguaje">—</td></tr>
         <tr><td>Respondidas</td><td id="confirm-respondidas">—</td></tr>
         <tr><td>Hora de envío</td><td id="confirm-timestamp">—</td></tr>
       </tbody>
@@ -649,8 +707,8 @@
   const EVAL_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzRTKfTNCpd-OE3S6tnAfBSzKYziDge_XQJ3C_nDNtkuQ2jpU6OtBHJNMiV5Ptf8s1u2w/exec';
   // ═══════════════════════════════════════════════════════════════
 
-  // ─── Banco de 40 preguntas (SIN respuestas) ───────────────────
-  const QUESTION_BANK = [
+  // ─── Banco C# – 40 preguntas (SIN respuestas) ────────────────
+  const QUESTION_BANK_CS = [
     // ── Tema 4.1 ──
     { id:'q01', tema:'4.1', enunciado:'¿Cuál es la forma correcta de declarar un <code>string</code> en C#?',
       opciones:{ A:'<code>string nombre = "Juan";</code>', B:"<code>String nombre = 'Juan';</code>", C:'<code>str nombre = "Juan";</code>', D:'<code>text nombre = "Juan";</code>' }},
@@ -737,6 +795,94 @@
       opciones:{ A:'<code>n</code> comparaciones', B:'<code>n / 2</code> comparaciones', C:'1 comparación', D:'0 comparaciones' }}
   ];
 
+  // ─── Banco Python – 40 preguntas (SIN respuestas) ─────────────
+  const QUESTION_BANK_PY = [
+    // ── Tema 4.1 – Cadenas en Python ──
+    { id:'py01', tema:'4.1', enunciado:'¿Cuál es la forma correcta de declarar una cadena en Python?',
+      opciones:{ A:'<code>string nombre = "Juan"</code>', B:'<code>nombre = "Juan"</code>', C:'<code>str nombre = "Juan"</code>', D:'<code>nombre := "Juan"</code>' }},
+    { id:'py02', tema:'4.1', enunciado:'¿Qué operador se usa para <strong>concatenar</strong> cadenas en Python?',
+      opciones:{ A:'<code>&amp;</code>', B:'<code>.</code>', C:'<code>+</code>', D:'<code>*</code>' }},
+    { id:'py03', tema:'4.1', enunciado:'¿Qué significa que las cadenas son <em>inmutables</em> en Python?',
+      opciones:{ A:'No se pueden declarar sin valor inicial', B:'No se pueden comparar con <code>==</code>', C:'Una vez creadas, su contenido no puede modificarse en memoria', D:'Solo pueden contener letras del alfabeto' }},
+    { id:'py04', tema:'4.1', enunciado:'¿Cuál es el resultado de <code>len("Hola")</code> en Python?',
+      opciones:{ A:'<code>3</code>', B:'<code>4</code>', C:'<code>5</code>', D:'Error de ejecución' }},
+    { id:'py05', tema:'4.1', enunciado:'¿Qué imprime <code>print("Hola" * 3)</code> en Python?',
+      opciones:{ A:'<code>Hola3</code>', B:'<code>HolaHolaHola</code>', C:'Error de sintaxis', D:'<code>Hola Hola Hola</code>' }},
+    { id:'py06', tema:'4.1', enunciado:'¿Cómo se accede al <strong>primer</strong> carácter de una cadena <code>s</code> en Python?',
+      opciones:{ A:'<code>s.first()</code>', B:'<code>s[1]</code>', C:'<code>s[0]</code>', D:'<code>s.charAt(0)</code>' }},
+    { id:'py07', tema:'4.1', enunciado:'¿Cuál es la sintaxis correcta de las <em>f-strings</em> en Python?',
+      opciones:{ A:'<code>"Hola " + nombre</code>', B:'<code>$"Hola {nombre}"</code>', C:'<code>f"Hola {nombre}"</code>', D:'<code>"Hola #{nombre}"</code>' }},
+    { id:'py08', tema:'4.1', enunciado:'¿Cómo se obtiene la longitud de una cadena <code>s</code> en Python?',
+      opciones:{ A:'<code>s.length</code>', B:'<code>s.Length</code>', C:'<code>s.size()</code>', D:'<code>len(s)</code>' }},
+    { id:'py09', tema:'4.1', enunciado:'¿Qué tipo almacena un <strong>solo carácter</strong> en Python?',
+      opciones:{ A:'<code>char</code>', B:'<code>character</code>', C:'<code>str</code> (cadena de longitud 1)', D:'<code>letter</code>' }},
+    { id:'py10', tema:'4.1', enunciado:'¿Cuál es el resultado de <code>"abc" == "ABC"</code> en Python?',
+      opciones:{ A:'<code>True</code>', B:'<code>False</code>', C:'Error de sintaxis', D:'<code>None</code>' }},
+    // ── Tema 4.2 – Métodos de cadenas ──
+    { id:'py11', tema:'4.2', enunciado:'¿Qué método convierte una cadena a <strong>mayúsculas</strong> en Python?',
+      opciones:{ A:'<code>ToUpper()</code>', B:'<code>upper()</code>', C:'<code>toUpper()</code>', D:'<code>capitalize()</code>' }},
+    { id:'py12', tema:'4.2', enunciado:'¿Qué hace el método <code>strip()</code> en Python?',
+      opciones:{ A:'Elimina todos los espacios dentro de la cadena', B:'Elimina los espacios al inicio y al final', C:'Reemplaza espacios por guiones', D:'Cuenta los espacios en la cadena' }},
+    { id:'py13', tema:'4.2', enunciado:'¿Qué valor retorna <code>"hola mundo".find("mundo")</code> en Python?',
+      opciones:{ A:'<code>0</code>', B:'<code>4</code>', C:'<code>5</code>', D:'<code>-1</code>' }},
+    { id:'py14', tema:'4.2', enunciado:'¿Qué retorna <code>"programacion"[0:7]</code> en Python?',
+      opciones:{ A:'<code>"program"</code>', B:'<code>"programac"</code>', C:'<code>"rogramac"</code>', D:'<code>"programaci"</code>' }},
+    { id:'py15', tema:'4.2', enunciado:'¿Qué método reemplaza <strong>todas</strong> las ocurrencias de un substring en Python?',
+      opciones:{ A:'<code>change()</code>', B:'<code>swap()</code>', C:'<code>replace()</code>', D:'<code>modify()</code>' }},
+    { id:'py16', tema:'4.2', enunciado:'¿Qué retorna <code>"den" in "cadena"</code> en Python?',
+      opciones:{ A:'<code>False</code>', B:'<code>3</code>', C:'<code>True</code>', D:'<code>"den"</code>' }},
+    { id:'py17', tema:'4.2', enunciado:'¿Qué hace el método <code>split()</code> en Python?',
+      opciones:{ A:'Divide la cadena en caracteres individuales', B:'Divide la cadena en partes usando un separador', C:'Elimina un carácter específico', D:'Busca un substring dentro de la cadena' }},
+    { id:'py18', tema:'4.2', enunciado:'¿Cuál es el resultado de <code>"Python".lower()</code>?',
+      opciones:{ A:'<code>"PYTHON"</code>', B:'<code>"python"</code>', C:'<code>"Python"</code>', D:'Error de ejecución' }},
+    { id:'py19', tema:'4.2', enunciado:'En Python, ¿cómo se obtienen todos los caracteres de <code>s</code> desde el índice 3 hasta el final?',
+      opciones:{ A:'<code>s[3:]</code>', B:'<code>s.substring(3)</code>', C:'<code>s[3]</code>', D:'<code>s[:3]</code>' }},
+    { id:'py20', tema:'4.2', enunciado:'¿Qué valor retorna <code>find()</code> cuando <strong>no encuentra</strong> el substring en Python?',
+      opciones:{ A:'<code>0</code>', B:'<code>None</code>', C:'<code>False</code>', D:'<code>-1</code>' }},
+    // ── Tema 4.3 – Listas ──
+    { id:'py21', tema:'4.3', enunciado:'¿Cuál es la forma correcta de crear una lista con <strong>5 ceros</strong> en Python?',
+      opciones:{ A:'<code>nums = [0] * 5</code>', B:'<code>int nums[5]</code>', C:'<code>nums = list(5)</code>', D:'<code>nums = new list(5)</code>' }},
+    { id:'py22', tema:'4.3', enunciado:'¿Cuál es el índice del <strong>primer</strong> elemento de una lista en Python?',
+      opciones:{ A:'<code>1</code>', B:'<code>-1</code>', C:'<code>0</code>', D:'Depende del tipo de dato' }},
+    { id:'py23', tema:'4.3', enunciado:'Si una lista tiene 8 elementos, ¿cuál es el índice del <strong>último</strong>?',
+      opciones:{ A:'<code>8</code>', B:'<code>7</code>', C:'<code>9</code>', D:'<code>len(lista)</code>' }},
+    { id:'py24', tema:'4.3', enunciado:'¿Qué son las <strong>listas paralelas</strong> en Python?',
+      opciones:{ A:'Listas que se ordenan simultáneamente', B:'Dos o más listas con igual cantidad de elementos donde el índice <code>i</code> relaciona datos entre ellas', C:'Listas que solo contienen números', D:'Listas declaradas en la misma línea' }},
+    { id:'py25', tema:'4.3', enunciado:'¿Cómo se obtiene la longitud de una lista <code>nums</code> en Python?',
+      opciones:{ A:'<code>nums.length</code>', B:'<code>nums.size()</code>', C:'<code>length(nums)</code>', D:'<code>len(nums)</code>' }},
+    { id:'py26', tema:'4.3', enunciado:'Dadas las listas paralelas <code>nombres</code> y <code>edades</code>, ¿qué representa <code>edades[i]</code>?',
+      opciones:{ A:'La edad del primer estudiante', B:'La edad del último estudiante', C:'La edad del estudiante en <code>nombres[i]</code>', D:'La suma de todas las edades' }},
+    { id:'py27', tema:'4.3', enunciado:'¿Qué ocurre al acceder a <code>lista[len(lista)]</code> en Python?',
+      opciones:{ A:'Retorna <code>None</code>', B:'Retorna el último elemento', C:'Lanza una excepción <code>IndexError</code>', D:'Retorna <code>0</code>' }},
+    { id:'py28', tema:'4.3', enunciado:'¿Cuál es el encabezado correcto de un <code>for</code> para recorrer <strong>todos</strong> los elementos de <code>lista</code> en Python?',
+      opciones:{ A:'<code>for i in range(1, len(lista)+1):</code>', B:'<code>for i in range(len(lista)):</code>', C:'<code>for i in range(0, len(lista)+1):</code>', D:'<code>for i in range(1, len(lista)):</code>' }},
+    { id:'py29', tema:'4.3', enunciado:'¿Cuál es la declaración correcta de una lista de cadenas con valores iniciales en Python?',
+      opciones:{ A:'<code>string[] frutas = ["manzana", "pera"]</code>', B:'<code>frutas = ["manzana", "pera"]</code>', C:'<code>frutas = list("manzana", "pera")</code>', D:'<code>frutas: list = new ["manzana", "pera"]</code>' }},
+    { id:'py30', tema:'4.3', enunciado:'Dado el código:<br><code>dias = ["Lun", "Mar", "Mie"]<br>print(dias[1])</code><br>¿Qué se imprime?',
+      opciones:{ A:'<code>Lun</code>', B:'<code>Mar</code>', C:'<code>Mie</code>', D:'Error de ejecución' }},
+    // ── Tema 4.4 – Ordenamiento y búsqueda ──
+    { id:'py31', tema:'4.4', enunciado:'¿En qué consiste el algoritmo de <strong>ordenamiento burbuja</strong>?',
+      opciones:{ A:'Divide la lista en mitades recursivamente', B:'Compara elementos adyacentes e intercambia si están en orden incorrecto, repitiendo hasta ordenar', C:'Busca el mínimo y lo coloca al inicio en cada pasada', D:'Inserta cada elemento en su posición correcta' }},
+    { id:'py32', tema:'4.4', enunciado:'En burbuja <strong>ascendente</strong> en Python, ¿cuándo se intercambia <code>lista[j]</code> con <code>lista[j+1]</code>?',
+      opciones:{ A:'Cuando <code>lista[j] &lt; lista[j+1]</code>', B:'Cuando <code>lista[j] == lista[j+1]</code>', C:'Cuando <code>lista[j] &gt; lista[j+1]</code>', D:'Siempre, sin condición' }},
+    { id:'py33', tema:'4.4', enunciado:'Para ordenar <code>n</code> elementos con burbuja, ¿cuántas pasadas externas se necesitan en el peor caso?',
+      opciones:{ A:'<code>n</code>', B:'<code>n // 2</code>', C:'<code>n - 1</code>', D:'<code>n²</code>' }},
+    { id:'py34', tema:'4.4', enunciado:'¿Qué valor retorna habitualmente una búsqueda lineal cuando el elemento <strong>no se encuentra</strong>?',
+      opciones:{ A:'<code>0</code>', B:'<code>False</code>', C:'<code>None</code>', D:'<code>-1</code>' }},
+    { id:'py35', tema:'4.4', enunciado:'¿Qué retorna <code>"abc" == "abc"</code> en Python?',
+      opciones:{ A:'<code>1</code>', B:'<code>-1</code>', C:'<code>True</code>', D:'<code>0</code>' }},
+    { id:'py36', tema:'4.4', enunciado:'¿Cuál es la forma más <em>pythónica</em> de intercambiar <code>lista[j]</code> y <code>lista[j+1]</code>?',
+      opciones:{ A:'<code>lista[j] = lista[j+1]<br>lista[j+1] = lista[j]</code>', B:'<code>lista[j], lista[j+1] = lista[j+1], lista[j]</code>', C:'<code>temp = lista[j]<br>lista[j] = lista[j+1]</code>', D:'<code>swap(lista[j], lista[j+1])</code>' }},
+    { id:'py37', tema:'4.4', enunciado:'¿Cuál es la complejidad en el <strong>peor caso</strong> de la búsqueda lineal en <code>n</code> elementos?',
+      opciones:{ A:'<code>O(1)</code>', B:'<code>O(log n)</code>', C:'<code>O(n)</code>', D:'<code>O(n²)</code>' }},
+    { id:'py38', tema:'4.4', enunciado:'¿Qué retorna <code>"banana" &gt; "apple"</code> en Python?',
+      opciones:{ A:'<code>False</code>', B:'<code>0</code>', C:'<code>True</code>', D:'Error de tipo' }},
+    { id:'py39', tema:'4.4', enunciado:'En burbuja <strong>descendente</strong> en Python, ¿cuándo se intercambia <code>lista[j]</code> con <code>lista[j+1]</code>?',
+      opciones:{ A:'Cuando <code>lista[j] &gt; lista[j+1]</code>', B:'Cuando <code>lista[j] &lt; lista[j+1]</code>', C:'Cuando <code>lista[j] == lista[j+1]</code>', D:'Nunca' }},
+    { id:'py40', tema:'4.4', enunciado:'Si el elemento buscado está en la <strong>primera posición</strong>, ¿cuántas comparaciones realiza la búsqueda lineal?',
+      opciones:{ A:'<code>n</code> comparaciones', B:'<code>n // 2</code> comparaciones', C:'1 comparación', D:'0 comparaciones' }}
+  ];
+
   // ══════════════════════════════════════════════
   // ESTADO
   // ══════════════════════════════════════════════
@@ -748,6 +894,7 @@
   let timerInterval   = null;
   let secondsLeft     = 45 * 60;
   let submitted       = false;
+  let selectedLanguage = '';    // 'CS' | 'PY'
 
   // ── Advertencias ──
   let advertencias      = 0;    // cuántas salidas se han detectado
@@ -782,6 +929,15 @@
   }
 
   // ══════════════════════════════════════════════
+  // SELECCIÓN DE LENGUAJE
+  // ══════════════════════════════════════════════
+  function selectLanguage(lang) {
+    selectedLanguage = lang;
+    document.getElementById('lang-cs').classList.toggle('selected', lang === 'CS');
+    document.getElementById('lang-py').classList.toggle('selected', lang === 'PY');
+  }
+
+  // ══════════════════════════════════════════════
   // SCREEN 1: REGISTRO
   // ══════════════════════════════════════════════
 
@@ -790,6 +946,11 @@
     const nombres   = document.getElementById('input-nombres').value.trim();
     const apellidos = document.getElementById('input-apellidos').value.trim();
     const codigo    = document.getElementById('input-codigo').value.trim();
+
+    if (!selectedLanguage) {
+      alert('Por favor selecciona un lenguaje de programación (C# o Python).');
+      return;
+    }
 
     if (!nombres || !apellidos || !codigo) {
       alert('Por favor completa todos los campos antes de continuar.');
@@ -821,7 +982,8 @@
   // INICIAR EXAMEN
   // ══════════════════════════════════════════════
   function startExam() {
-    activeQuestions = shuffle(QUESTION_BANK).slice(0, 20);
+    const bank = selectedLanguage === 'CS' ? QUESTION_BANK_CS : QUESTION_BANK_PY;
+    activeQuestions = shuffle(bank).slice(0, 20);
     answers = {};
     activeQuestions.forEach(q => { answers[q.id] = ''; });
 
@@ -834,7 +996,7 @@
 
     // Info del estudiante en el header
     document.getElementById('header-student-info').textContent =
-      `${studentData.nombres} ${studentData.apellidos} · ${studentData.codigo}`;
+      `${studentData.nombres} ${studentData.apellidos} · ${studentData.codigo} · ${selectedLanguage === 'CS' ? 'C#' : 'Python'}`;
 
     buildDots();
     renderQuestion(0);
@@ -1041,6 +1203,7 @@
       nombre:     studentData.nombres,
       apellidos:  studentData.apellidos,
       codigo:     studentData.codigo,
+      lenguaje:   selectedLanguage,
       timestamp,
       preguntas:  preguntasIds,
       respuestas: respuestasArr,
@@ -1068,6 +1231,7 @@
     const answered = payload.respuestas.filter(r => r !== '').length;
     document.getElementById('confirm-nombre').textContent = `${payload.nombre} ${payload.apellidos}`;
     document.getElementById('confirm-codigo').textContent = payload.codigo;
+    document.getElementById('confirm-lenguaje').textContent = payload.lenguaje === 'CS' ? 'C#' : 'Python';
     document.getElementById('confirm-respondidas').textContent = `${answered} / 20`;
     document.getElementById('confirm-timestamp').textContent = new Date(payload.timestamp).toLocaleString('es-HN', { dateStyle: 'medium', timeStyle: 'short' });
     showScreen('screen-confirmacion');
@@ -1182,6 +1346,7 @@
         nombre:              studentData.nombres,
         apellidos:           studentData.apellidos,
         codigo:              studentData.codigo,
+        lenguaje:            selectedLanguage,
         timestamp:           new Date().toISOString(),
         advertencias:        3,
         preguntasRespondidas: respondidas,
